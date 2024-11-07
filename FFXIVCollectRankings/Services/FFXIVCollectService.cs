@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -64,9 +65,14 @@ namespace FFXIVCollectRankings
 
                 return characterData;
             }
+            catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null; // Return null for 404
+            }
             catch (HttpRequestException e)
             {
-                pluginLog.Error($"Network error fetching data for Lodestone ID {lodestoneId}: {e.Message}");
+                pluginLog.Warning($"Network error fetching data for Lodestone ID {lodestoneId}: {e.Message}");
+                return null; // Return null for other errors and warn
             }
             catch (JsonException e)
             {

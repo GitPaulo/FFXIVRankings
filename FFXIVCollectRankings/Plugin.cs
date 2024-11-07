@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui.NamePlate;
-using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Game.Gui.NamePlate;
+using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using FFXIVCollectRankings.Windows;
 
 namespace FFXIVCollectRankings;
@@ -15,6 +15,8 @@ namespace FFXIVCollectRankings;
 public sealed class Plugin : IDalamudPlugin
 {
     public Configuration Configuration { get; init; }
+    public string Name => "FFXIV Collect Rankings";
+    private const string CommandName = "/fcr";
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
@@ -23,27 +25,32 @@ public sealed class Plugin : IDalamudPlugin
     internal static ITextureProvider TextureProvider { get; private set; } = null!;
 
     [PluginService]
-    internal static ICommandManager CommandManager { get; private set; } = null!;
+    public static ICommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService]
+    public static INamePlateGui NamePlateGui { get; private set; } = null!;
+
+    [PluginService]
+    public static IObjectTable Objects { get; private set; } = null!;
 
     [PluginService]
     public static IPluginLog PluginLog { get; private set; } = null!;
 
     [PluginService]
-    private static INamePlateGui NamePlateGui { get; set; } = null!;
+    private static IChatGui Chat { get; set; } = null!;
 
-    private const string CommandName = "/fcr";
-
-    // Window
     private readonly WindowSystem windowSystem = new("FFXIVCollectRankings");
     private readonly ConfigWindow configWindow;
-    private readonly MainWindow mainWindow;
 
     // Services
     private readonly FFXIVCollectService ffxivCollectService;
     private readonly LodestoneIdFinder lodestoneIdFinder;
 
-    // Processed players cache
-    private readonly HashSet<string> processedPlayers = new();
+    // Lookup for player ranks
+    private readonly Dictionary<string, string> playerRanks = new();
+
+    // Should show
+    private bool isRankDisplayEnabled = true;
 
     public Plugin()
     {
@@ -51,14 +58,12 @@ public sealed class Plugin : IDalamudPlugin
 
         // Initialize Windows
         configWindow = new ConfigWindow(this);
-        mainWindow = new MainWindow(this, "Resources\\goat.png");
         windowSystem.AddWindow(configWindow);
-        windowSystem.AddWindow(mainWindow);
 
         // Command
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "Opens the FFXIV Collect Rankings Config."
         });
 
         // Services initialization
@@ -68,27 +73,39 @@ public sealed class Plugin : IDalamudPlugin
         // UI Hooks
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-        NamePlateGui.OnNamePlateUpdate += OnNamePlateUpdate;
+        NamePlateGui.OnNamePlateUpdate += NamePlateGui_OnNamePlateUpdate;
+
+        PluginLog.Information("Plugin loaded and nameplate update hooked.");
     }
 
     public void Dispose()
     {
         windowSystem.RemoveAllWindows();
         configWindow.Dispose();
-        mainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
-        NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
+        NamePlateGui.OnNamePlateUpdate -= NamePlateGui_OnNamePlateUpdate;
+
+        PluginLog.Information("Plugin disposed and nameplate hook removed.");
     }
 
     private void OnCommand(string command, string args)
     {
-        ToggleMainUI();
+        // Toggle the rank display state
+        isRankDisplayEnabled = !isRankDisplayEnabled;
+        var message = $"Rank display is now {(isRankDisplayEnabled ? "enabled" : "disabled")}";
+        PluginLog.Information(message);
+        Chat.Print(message);
     }
 
-    private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    private void NamePlateGui_OnNamePlateUpdate(
+        INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
+        if (!isRankDisplayEnabled)
+        {
+            return;
+        }
+
         foreach (var handler in handlers)
         {
             if (handler.NamePlateKind != NamePlateKind.PlayerCharacter) continue;
@@ -96,65 +113,61 @@ public sealed class Plugin : IDalamudPlugin
             var playerCharacter = handler.PlayerCharacter;
             if (playerCharacter == null || !playerCharacter.IsValid()) continue;
 
-            var (playerName, worldName) = GetPlayerDetails(playerCharacter);
+            var (playerName, worldName) = GetPlayerKeyDetails(playerCharacter);
             if (string.IsNullOrEmpty(playerName) || string.IsNullOrEmpty(worldName)) continue;
 
-            var playerIdentifier = $"{playerName}@{worldName}";
+            string playerKey = $"{playerName}@{worldName}";
 
-            if (processedPlayers.Contains(playerIdentifier)) continue;
-            processedPlayers.Add(playerIdentifier);
-
-            FetchAndDisplayRankAsync(handler, playerName, worldName);
+            // Check if we already have the rank in our lookup
+            if (playerRanks.TryGetValue(playerKey, out var rankText))
+            {
+                // If found, update the nameplate text directly
+                UpdateNamePlateText(handler, rankText);
+            }
+            else
+            {
+                // Fetch rank and update the lookup
+                FetchAndDisplayRankAsync(handler, playerKey, playerCharacter);
+            }
         }
-
-        processedPlayers.Clear(); // Clear after each update cycle to allow reprocessing
     }
 
-    private (string? playerName, string? worldName) GetPlayerDetails(IPlayerCharacter? playerCharacter)
+    private (string? playerName, string? worldName) GetPlayerKeyDetails(IPlayerCharacter playerCharacter)
     {
-        return playerCharacter == null
-                   ? (null, null)
-                   : (playerCharacter.Name.TextValue, playerCharacter.HomeWorld?.GameData?.Name);
+        return (playerCharacter.Name.TextValue, playerCharacter.HomeWorld?.GameData?.Name);
     }
 
-    private async void FetchAndDisplayRankAsync(INamePlateUpdateHandler handler, string playerName, string worldName)
+    private async void FetchAndDisplayRankAsync(
+        INamePlateUpdateHandler handler, string playerKey, IPlayerCharacter playerCharacter)
     {
+        var (playerName, worldName) = GetPlayerKeyDetails(playerCharacter);
         string? lodestoneId = await lodestoneIdFinder.GetLodestoneIdAsync(playerName, worldName);
+
         if (string.IsNullOrEmpty(lodestoneId))
         {
-            PluginLog.Warning($"No Lodestone ID found for {playerName} on {worldName}. Marking as processed.");
-            UpdateNamePlateText(handler, "Not Found");
+            PluginLog.Warning(
+                $"No Lodestone ID found for {playerName} on {worldName}. Marking as processed and returning debug information.");
+            PluginLog.Debug(
+                $"{playerCharacter.Name.TextValue}@{playerCharacter.HomeWorld?.GameData?.Name} - {playerCharacter.Address}");
+            playerRanks[playerKey] = "Not Found";
             return;
         }
 
         var characterData = await ffxivCollectService.GetCharacterDataAsync(lodestoneId);
-
-        if (characterData == null)
-        {
-            PluginLog.Warning(
-                $"Character data not found for {playerName} on {worldName} (Lodestone ID: {lodestoneId}).");
-            UpdateNamePlateText(handler, "Not Found");
-            return;
-        }
-
-        string rankText = characterData.Rankings?.Achievements?.Global != null
+        string rankText = characterData?.Rankings?.Achievements?.Global != null
                               ? $"Rank: {characterData.Rankings.Achievements.Global}"
-                              : "Private";
+                              : "Private"; // Return the rank text
 
+        // Update the lookup and the nameplate text
+        playerRanks[playerKey] = rankText;
         UpdateNamePlateText(handler, rankText);
-
-        PluginLog.Information(
-            $"Updated rank for {playerName} on {worldName} (Lodestone ID: {lodestoneId}): {rankText}");
-        PluginLog.Debug($"FetchAndDisplayRankAsync completed for {playerName} on {worldName}.");
     }
 
-    private void UpdateNamePlateText(INamePlateUpdateHandler handler, string rankText)
+    private void UpdateNamePlateText(INamePlateUpdateHandler handler, string text)
     {
-        var originalText = handler.NameParts.Text;
-        var nameWithRank = $"{rankText}\n{originalText}";
-
-        handler.NameParts.Text = nameWithRank;
+        handler.NameParts.Text = text;
         handler.NameParts.TextWrap = CreateTextWrap(new Vector4(1.0f, 0.8f, 0.3f, 1.0f)); // Adjust color as desired
+        PluginLog.Debug($"Updated nameplate text to: {text}");
     }
 
     private (Dalamud.Game.Text.SeStringHandling.SeString, Dalamud.Game.Text.SeStringHandling.SeString) CreateTextWrap(
@@ -172,5 +185,4 @@ public sealed class Plugin : IDalamudPlugin
 
     private void DrawUI() => windowSystem.Draw();
     public void ToggleConfigUI() => configWindow.Toggle();
-    public void ToggleMainUI() => mainWindow.Toggle();
 }

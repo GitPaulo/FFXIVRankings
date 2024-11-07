@@ -1,6 +1,22 @@
-# TODO
+# FFXIVCollectRankings
 
-Ref:
-- https://documenter.getpostman.com/view/1779678/TzXzDHM1#de1af1f4-e67c-45e1-a268-28707f545c93
-- https://github.com/WesselKuipers/FCNameColor/blob/bda9fd3d0696e9f50407f1dc2e8ad658260a5843/FCNameColor/Plugin.cs
-- https://github.com/shdwp/xivPartyIcons/blob/main/PartyIcons/View/NameplateView.cs
+Toggles the display of the FFXIV Collect rankings on the nameplate of a player.
+
+Configure ranking by:
+1. Achievements
+2. Mounts
+3. Minions
+
+![img.png](img.png)
+
+Use `/fcr` to toggle the display of the rankings.
+
+> This plugin pairs well with: https://github.com/GitPaulo/RightClickSearchInfo
+
+### Installation through https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/TODO
+
+### TODO
+
+- [ ] Improve performance during fetches in populated areas
+- [ ] Finish configuration
+- [ ] ...
