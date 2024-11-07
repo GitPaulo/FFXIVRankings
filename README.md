@@ -7,7 +7,7 @@ Configure ranking by:
 2. Mounts
 3. Minions
 
-![img.png](img.png)
+![FCR.png](FCR.png)
 
 Use `/fcr` to toggle the display of the rankings.
 
