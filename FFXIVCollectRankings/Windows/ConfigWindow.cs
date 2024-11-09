@@ -8,26 +8,24 @@ namespace FFXIVCollectRankings.Windows;
 public class ConfigWindow : Window, IDisposable
 {
     private Configuration Configuration;
+    private readonly Plugin plugin;
 
-    // We give this window a constant ID using ###
-    // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
-    // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###With a constant ID")
+    public ConfigWindow(Plugin plugin) : base("FFXIV Collect Rankings Configuratio###ConfigWindow")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(232, 90);
+        Size = new Vector2(300, 150);
         SizeCondition = ImGuiCond.Always;
 
         Configuration = plugin.Configuration;
+        this.plugin = plugin; // Store reference to the plugin for refresh action
     }
 
     public void Dispose() { }
 
     public override void PreDraw()
     {
-        // Flags must be added or removed before Draw() is being called, or they won't apply
         if (Configuration.IsConfigWindowMovable)
         {
             Flags &= ~ImGuiWindowFlags.NoMove;
@@ -40,20 +38,38 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        // can't ref a property, so use a local copy
-        var configValue = Configuration.SomePropertyToBeSavedAndWithADefault;
-        if (ImGui.Checkbox("Random Config Bool", ref configValue))
+        // Toggle for Percentile Colors
+        bool usePercentileColours = Configuration.UsePercentileColours; // Read the current value
+        if (ImGui.Checkbox("Use Percentile Colors", ref usePercentileColours))
         {
-            Configuration.SomePropertyToBeSavedAndWithADefault = configValue;
-            // can save immediately on change, if you don't want to provide a "Save and Close" button
-            Configuration.Save();
+            Configuration.UsePercentileColours = usePercentileColours; // Update the configuration
+            Configuration.Save(); // Save the updated configuration
         }
 
-        var movable = Configuration.IsConfigWindowMovable;
-        if (ImGui.Checkbox("Movable Config Window", ref movable))
+        // Dropdown for Rank Metric selection
+        ImGui.Text("Select Rank Metric:");
+        if (ImGui.BeginCombo("##RankMetric", Configuration.SelectedRankMetric.ToString()))
         {
-            Configuration.IsConfigWindowMovable = movable;
-            Configuration.Save();
+            foreach (Plugin.RankMetric metric in Enum.GetValues(typeof(Plugin.RankMetric)))
+            {
+                bool isSelected = Configuration.SelectedRankMetric == metric;
+                if (ImGui.Selectable(metric.ToString(), isSelected))
+                {
+                    Configuration.SelectedRankMetric = metric;
+                    Configuration.Save();
+                }
+                if (isSelected)
+                {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        // Button to refresh the cache
+        if (ImGui.Button("Refresh Cache"))
+        {
+            plugin.RefreshCache(); // Call the refresh method in the plugin
         }
     }
 }

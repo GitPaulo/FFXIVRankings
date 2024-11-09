@@ -1,12 +1,14 @@
 {
-  "Author": "GitPaulo",
-  "Name": "FFXIVCollectRankings",
-  "Punchline": "",
-  "Description": "",
-  "ApplicableVersion": "any",
-  "Tags": [
-    "sample",
-    "plugin",
-    "goats"
-  ]
+    "Author": "GitPaulo",
+    "Name": "FFXIVCollectRankings",
+    "Punchline": "Display FFXIVCollect rankings as nameplates.",
+    "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "ffxivcollect",
+        "plugin",
+        "gitpaulo",
+        "rankings",
+        "artin"
+    ]
 }

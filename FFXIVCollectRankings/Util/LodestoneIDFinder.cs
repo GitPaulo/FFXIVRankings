@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dalamud.Plugin.Services;
 using NetStone;
+using NetStone.Model.Parseables.Search.Character;
 using NetStone.Search.Character;
 
 namespace FFXIVCollectRankings
@@ -13,37 +16,53 @@ namespace FFXIVCollectRankings
         private readonly LodestoneClient lodestoneClient;
         private readonly IPluginLog pluginLog;
 
-        public LodestoneIdFinder(IPluginLog pluginLog, LodestoneClient? lodestoneClient = null)
+        // Dictionary to track ongoing requests for specific character-server pairs
+        private static readonly ConcurrentDictionary<string, Task<string?>> ActiveRequests = new();
+
+        public LodestoneIdFinder(IPluginLog pluginLog, LodestoneClient lodestoneClient)
         {
-            this.pluginLog = pluginLog;
-            this.lodestoneClient = lodestoneClient ?? LodestoneClient.GetClientAsync().GetAwaiter().GetResult();
+            this.pluginLog = pluginLog ?? throw new ArgumentNullException(nameof(pluginLog));
+            this.lodestoneClient = lodestoneClient ?? throw new ArgumentNullException(nameof(lodestoneClient));
         }
 
-        /// <summary>
-        /// Finds the Lodestone ID of a character by name and server.
-        /// </summary>
-        /// <param name="characterName">The character's name.</param>
-        /// <param name="serverName">The character's server.</param>
-        /// <returns>The Lodestone ID if found; otherwise, null.</returns>
+        public static async Task<LodestoneIdFinder> CreateAsync(IPluginLog pluginLog)
+        {
+            var client = await LodestoneClient.GetClientAsync();
+            return new LodestoneIdFinder(pluginLog, client);
+        }
+
         public async Task<string?> GetLodestoneIdAsync(string characterName, string serverName)
         {
-            if (string.IsNullOrWhiteSpace(characterName) || string.IsNullOrWhiteSpace(serverName))
-            {
-                pluginLog.Warning("Character name or server name is empty.");
-                return null;
-            }
+
+            // Use a unique cache key for each character-server pair
+            string cacheKey = $"{characterName}@{serverName}";
+
+            // Ensure only one request per character-server pair is active at a time
+            var requestTask = ActiveRequests.GetOrAdd(cacheKey, _ => FetchLodestoneIdAsync(characterName, serverName));
 
             try
             {
-                var searchQuery = new CharacterSearchQuery
+                return await requestTask;
+            } finally
+            {
+                // Remove the task from the active requests once it completes
+                ActiveRequests.TryRemove(cacheKey, out _);
+            }
+        }
+
+        private async Task<string?> FetchLodestoneIdAsync(string characterName, string serverName)
+        {
+            try
+            {
+                var searchResults = await SearchCharacterOnLodestone(characterName, serverName);
+
+                if (searchResults == null || !searchResults.Results.Any())
                 {
-                    World = serverName,
-                    CharacterName = characterName
-                };
+                    pluginLog.Warning($"No Lodestone character search results found for {characterName} on {serverName}.");
+                    return null;
+                }
 
-                var searchResults = await lodestoneClient.SearchCharacter(searchQuery);
-                var lodestoneId = searchResults?.Results.FirstOrDefault()?.Id;
-
+                var lodestoneId = searchResults.Results.FirstOrDefault()?.Id;
                 if (lodestoneId == null)
                 {
                     pluginLog.Warning($"No Lodestone ID found for {characterName} on {serverName}.");
@@ -53,12 +72,41 @@ namespace FFXIVCollectRankings
             }
             catch (HttpRequestException httpEx)
             {
-                pluginLog.Error($"Network error while fetching Lodestone ID for {characterName} on {serverName}: {httpEx.Message}");
+                pluginLog.Error(
+                    $"Network error while fetching Lodestone ID for {characterName} on {serverName}: {httpEx.Message}");
                 return null;
             }
             catch (Exception ex)
             {
-                pluginLog.Error($"Unexpected error fetching Lodestone ID for {characterName} on {serverName}: {ex.Message}");
+                pluginLog.Error(
+                    $"Unexpected error while fetching Lodestone ID for {characterName} on {serverName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<CharacterSearchPage?> SearchCharacterOnLodestone(string characterName, string serverName)
+        {
+            var searchQuery = new CharacterSearchQuery
+            {
+                World = serverName,
+                CharacterName = characterName
+            };
+
+            pluginLog.Debug($"Starting search for character '{characterName}' on server '{serverName}'.");
+
+            try
+            {
+                var stopwatch = Stopwatch.StartNew();
+                var result = await lodestoneClient.SearchCharacter(searchQuery);
+                stopwatch.Stop();
+
+                pluginLog.Debug(
+                    $"Search completed in {stopwatch.ElapsedMilliseconds}ms for {characterName} on {serverName}.");
+                return result;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                pluginLog.Error($"Network error during character search: {httpEx.Message}");
                 return null;
             }
         }

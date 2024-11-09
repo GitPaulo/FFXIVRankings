@@ -1,0 +1,26 @@
+[
+    {
+        "Author": "GitPaulo",
+        "Name": "FFXIVCollect Rankings",
+        "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
+        "InternalName": "FFXIVCollectRankings",
+        "AssemblyVersion": "1.0.0",
+        "RepoUrl": "https://github.com/GitPaulo/RightClickSearchInfo",
+        "IconUrl": "https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/master/Data/icon.png",
+        "ApplicableVersion": "any",
+        "Tags": [
+            "dalamud",
+            "search",
+            "info",
+            "lodestone",
+            "GitPaulo",
+            "artin"
+        ],
+        "DalamudApiLevel": 10,
+        "IsHide": "False",
+        "IsTestingExclusive": "False",
+        "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip",
+        "DownloadLinkTesting": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip",
+        "DownloadLinkUpdate": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip"
+    }
+]

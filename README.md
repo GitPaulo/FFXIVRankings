@@ -13,10 +13,4 @@ Use `/fcr` to toggle the display of the rankings.
 
 > This plugin pairs well with: https://github.com/GitPaulo/RightClickSearchInfo
 
-### Installation through https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/TODO
-
-### TODO
-
-- [ ] Improve performance during fetches in populated areas
-- [ ] Finish configuration
-- [ ] ...
+### Installation through `https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/master/repo.json`

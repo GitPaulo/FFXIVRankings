@@ -11,8 +11,9 @@ namespace FFXIVCollectRankings
 {
     public class FFXIVCollectService
     {
-        private static readonly HttpClient HttpClient = new HttpClient();
         private const string ApiBaseUrl = "https://ffxivcollect.com/api/characters/";
+
+        private static readonly HttpClient HttpClient = new HttpClient();
         private readonly ConcurrentDictionary<string, (DateTime timestamp, CharacterData data)> cache;
         private readonly TimeSpan cacheDuration;
         private readonly IPluginLog pluginLog;
@@ -20,9 +21,8 @@ namespace FFXIVCollectRankings
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
-
 
         public FFXIVCollectService(TimeSpan cacheDuration, IPluginLog pluginLog)
         {
@@ -39,55 +39,89 @@ namespace FFXIVCollectRankings
                 return null;
             }
 
-            // Check cache
+            if (TryGetCachedData(lodestoneId, out var cachedData))
+            {
+                return cachedData;
+            }
+
+            return await FetchAndCacheCharacterDataAsync(lodestoneId);
+        }
+
+        private bool TryGetCachedData(string lodestoneId, out CharacterData? cachedData)
+        {
             if (cache.TryGetValue(lodestoneId, out var cachedEntry) &&
                 DateTime.Now - cachedEntry.timestamp < cacheDuration)
             {
-                return cachedEntry.data;
+                cachedData = cachedEntry.data;
+                return true;
             }
 
-            // Fetch data from API
+            cachedData = null;
+            return false;
+        }
+
+        private async Task<CharacterData?> FetchAndCacheCharacterDataAsync(string lodestoneId)
+        {
             try
             {
-                var response = await HttpClient.GetAsync($"{ApiBaseUrl}{lodestoneId}");
-                response.EnsureSuccessStatusCode();
+                var jsonResponse = await FetchDataFromApiAsync(lodestoneId);
+                if (jsonResponse == null) return null;
 
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                // Log the raw JSON response before deserialization
-                        pluginLog.Debug($"Raw JSON response for Lodestone ID {lodestoneId}: {jsonResponse}");
-                var characterData = JsonSerializer.Deserialize<CharacterData>(jsonResponse, JsonOptions);
-
+                var characterData = DeserializeCharacterData(jsonResponse);
                 if (characterData != null)
                 {
-                    cache[lodestoneId] = (DateTime.Now, characterData);
-                    pluginLog.Information($"Successfully fetched and cached data for Lodestone ID {lodestoneId}.");
+                    cache.AddOrUpdate(lodestoneId, (DateTime.Now, characterData), (key, oldValue) => (DateTime.Now, characterData));
                 }
 
                 return characterData;
             }
-            catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
+            catch (Exception e)
             {
-                return null; // Return null for 404
+                pluginLog.Error($"Unexpected error for Lodestone ID {lodestoneId}: {e.Message}");
+                return null;
+            }
+        }
+
+        private async Task<string?> FetchDataFromApiAsync(string lodestoneId)
+        {
+            try
+            {
+                var response = await HttpClient.GetAsync($"{ApiBaseUrl}{lodestoneId}");
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    pluginLog.Debug($"No FFXIVCollect Character data found Lodestone ID: {lodestoneId}"); // This is okay. The character may not exist on FFXIVCollect/private.
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                pluginLog.Debug($"Raw JSON response for Lodestone ID {lodestoneId}: {jsonResponse}");
+                return jsonResponse;
             }
             catch (HttpRequestException e)
             {
                 pluginLog.Warning($"Network error fetching data for Lodestone ID {lodestoneId}: {e.Message}");
-                return null; // Return null for other errors and warn
+                return null;
+            }
+        }
+
+        private CharacterData? DeserializeCharacterData(string jsonResponse)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<CharacterData>(jsonResponse, JsonOptions);
             }
             catch (JsonException e)
             {
-                pluginLog.Error($"Error parsing JSON data for Lodestone ID {lodestoneId}: {e.Message}");
+                pluginLog.Error($"Error parsing JSON data: {e.Message}");
+                return null;
             }
-            catch (Exception e)
-            {
-                pluginLog.Error($"Unexpected error for Lodestone ID {lodestoneId}: {e.Message}");
-            }
-
-            return null;
         }
     }
 
-
+    /**
+     * Eh, I tried my best hehe
+     */
     public class CharacterData
     {
         public int Id { get; set; }
