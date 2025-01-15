@@ -14,10 +14,10 @@ public class Configuration : IPluginConfiguration
     public bool UsePercentileColours { get; set; } = true;
 
     // Enum to define available rank metrics
-    public Plugin.RankMetric SelectedRankMetric { get; set; } = Plugin.RankMetric.Achievements; // Default to Achievements
+    public PlayerRankManager.RankMetric SelectedRankMetric { get; set; } = PlayerRankManager.RankMetric.Achievements; // Default to Achievements
 
     public void Save()
-    {
-        Plugin.PluginInterface.SavePluginConfig(this);
+    { 
+        Shared.PluginInterface.SavePluginConfig(this);
     }
 }

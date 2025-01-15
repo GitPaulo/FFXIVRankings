@@ -7,26 +7,20 @@ namespace FFXIVCollectRankings.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
-    private Configuration Configuration;
-    private readonly Plugin plugin;
-
-    public ConfigWindow(Plugin plugin) : base("FFXIV Collect Rankings Configuratio###ConfigWindow")
+    public ConfigWindow() : base("FFXIV Collect Rankings Configuratio###ConfigWindow")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
         Size = new Vector2(300, 150);
         SizeCondition = ImGuiCond.Always;
-
-        Configuration = plugin.Configuration;
-        this.plugin = plugin; // Store reference to the plugin for refresh action
     }
 
     public void Dispose() { }
 
     public override void PreDraw()
     {
-        if (Configuration.IsConfigWindowMovable)
+        if (Shared.Config.IsConfigWindowMovable)
         {
             Flags &= ~ImGuiWindowFlags.NoMove;
         }
@@ -39,24 +33,24 @@ public class ConfigWindow : Window, IDisposable
     public override void Draw()
     {
         // Toggle for Percentile Colors
-        bool usePercentileColours = Configuration.UsePercentileColours; // Read the current value
+        bool usePercentileColours = Shared.Config.UsePercentileColours; // Read the current value
         if (ImGui.Checkbox("Use Percentile Colors", ref usePercentileColours))
         {
-            Configuration.UsePercentileColours = usePercentileColours; // Update the configuration
-            Configuration.Save(); // Save the updated configuration
+            Shared.Config.UsePercentileColours = usePercentileColours; // Update the configuration
+            Shared.Config.Save(); // Save the updated configuration
         }
 
         // Dropdown for Rank Metric selection
         ImGui.Text("Select Rank Metric:");
-        if (ImGui.BeginCombo("##RankMetric", Configuration.SelectedRankMetric.ToString()))
+        if (ImGui.BeginCombo("##RankMetric", Shared.Config.SelectedRankMetric.ToString()))
         {
-            foreach (Plugin.RankMetric metric in Enum.GetValues(typeof(Plugin.RankMetric)))
+            foreach (PlayerRankManager.RankMetric metric in Enum.GetValues(typeof(PlayerRankManager.RankMetric)))
             {
-                bool isSelected = Configuration.SelectedRankMetric == metric;
+                bool isSelected = Shared.Config.SelectedRankMetric == metric;
                 if (ImGui.Selectable(metric.ToString(), isSelected))
                 {
-                    Configuration.SelectedRankMetric = metric;
-                    Configuration.Save();
+                    Shared.Config.SelectedRankMetric = metric;
+                    Shared.Config.Save();
                 }
                 if (isSelected)
                 {
@@ -69,7 +63,7 @@ public class ConfigWindow : Window, IDisposable
         // Button to refresh the cache
         if (ImGui.Button("Refresh Cache"))
         {
-            plugin.RefreshCache(); // Call the refresh method in the plugin
+            Shared.PlayerRankManager.RefreshCache(); // Call the refresh method in the plugin
         }
     }
 }

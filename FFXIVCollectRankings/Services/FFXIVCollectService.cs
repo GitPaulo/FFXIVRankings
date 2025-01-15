@@ -1,5 +1,4 @@
-﻿using Dalamud.Plugin.Services;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
@@ -9,33 +8,24 @@ using System.Threading.Tasks;
 
 namespace FFXIVCollectRankings
 {
-    public class FFXIVCollectService
+    public class FFXIVCollectService(TimeSpan cacheDuration)
     {
         private const string ApiBaseUrl = "https://ffxivcollect.com/api/characters/";
 
-        private static readonly HttpClient HttpClient = new HttpClient();
-        private readonly ConcurrentDictionary<string, (DateTime timestamp, CharacterData data)> cache;
-        private readonly TimeSpan cacheDuration;
-        private readonly IPluginLog pluginLog;
+        private readonly HttpClient httpClient = new HttpClient();
+        private readonly ConcurrentDictionary<string, (DateTime timestamp, CharacterData data)> cache = new();
 
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        public FFXIVCollectService(TimeSpan cacheDuration, IPluginLog pluginLog)
-        {
-            this.pluginLog = pluginLog ?? throw new ArgumentNullException(nameof(pluginLog));
-            this.cacheDuration = cacheDuration;
-            cache = new ConcurrentDictionary<string, (DateTime, CharacterData)>();
-        }
-
         public async Task<CharacterData?> GetCharacterDataAsync(string lodestoneId)
         {
             if (string.IsNullOrWhiteSpace(lodestoneId))
             {
-                pluginLog.Warning("Lodestone ID cannot be null or empty.");
+                Shared.Log.Warning("Lodestone ID cannot be null or empty.");
                 return null;
             }
 
@@ -70,14 +60,15 @@ namespace FFXIVCollectRankings
                 var characterData = DeserializeCharacterData(jsonResponse);
                 if (characterData != null)
                 {
-                    cache.AddOrUpdate(lodestoneId, (DateTime.Now, characterData), (key, oldValue) => (DateTime.Now, characterData));
+                    cache.AddOrUpdate(lodestoneId, (DateTime.Now, characterData),
+                        (_, _) => (DateTime.Now, characterData));
                 }
 
                 return characterData;
             }
             catch (Exception e)
             {
-                pluginLog.Error($"Unexpected error for Lodestone ID {lodestoneId}: {e.Message}");
+                Shared.Log.Error($"Unexpected error for Lodestone ID {lodestoneId}: {e.Message}");
                 return null;
             }
         }
@@ -86,21 +77,23 @@ namespace FFXIVCollectRankings
         {
             try
             {
-                var response = await HttpClient.GetAsync($"{ApiBaseUrl}{lodestoneId}");
+                var response = await httpClient.GetAsync($"{ApiBaseUrl}{lodestoneId}");
+
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    pluginLog.Debug($"No FFXIVCollect Character data found Lodestone ID: {lodestoneId}"); // This is okay. The character may not exist on FFXIVCollect/private.
+                    Shared.Log.Debug($"No data found for Lodestone ID: {lodestoneId}");
                     return null;
                 }
 
                 response.EnsureSuccessStatusCode();
                 var jsonResponse = await response.Content.ReadAsStringAsync();
-                pluginLog.Debug($"Raw JSON response for Lodestone ID {lodestoneId}: {jsonResponse}");
+
+                Shared.Log.Debug($"Raw JSON response for Lodestone ID {lodestoneId}: {jsonResponse}");
                 return jsonResponse;
             }
             catch (HttpRequestException e)
             {
-                pluginLog.Warning($"Network error fetching data for Lodestone ID {lodestoneId}: {e.Message}");
+                Shared.Log.Warning($"Network error for Lodestone ID {lodestoneId}: {e.Message}");
                 return null;
             }
         }
@@ -113,7 +106,7 @@ namespace FFXIVCollectRankings
             }
             catch (JsonException e)
             {
-                pluginLog.Error($"Error parsing JSON data: {e.Message}");
+                Shared.Log.Error($"Error parsing JSON data: {e.Message}");
                 return null;
             }
         }
