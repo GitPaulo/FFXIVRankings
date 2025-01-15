@@ -1,10 +1,10 @@
 [
     {
         "Author": "GitPaulo",
-        "Name": "FFXIVCollect Rankings",
+        "Name": "FFXIVCollectRankings",
         "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
         "InternalName": "FFXIVCollectRankings",
-        "AssemblyVersion": "1.0.0",
+        "AssemblyVersion": "2.0.0",
         "RepoUrl": "https://github.com/GitPaulo/FFXIVCollectRankings",
         "IconUrl": "https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/master/Data/icon.png",
         "ApplicableVersion": "any",
@@ -16,11 +16,11 @@
             "GitPaulo",
             "artin"
         ],
-        "DalamudApiLevel": 10,
+        "DalamudApiLevel": 11,
         "IsHide": "False",
         "IsTestingExclusive": "False",
-        "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip",
-        "DownloadLinkTesting": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip",
-        "DownloadLinkUpdate": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/1.0.0/FFXIVCollectRankings.zip"
+        "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip",
+        "DownloadLinkTesting": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip"
     }
 ]
