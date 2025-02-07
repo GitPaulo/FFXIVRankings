@@ -2,7 +2,7 @@
     {
         "Author": "GitPaulo",
         "Name": "FFXIVCollectRankings",
-        "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
+        "Description": "Displays FFXIV Collect rankings for achievements/mounts/minions in player's nameplates.",
         "InternalName": "FFXIVCollectRankings",
         "AssemblyVersion": "2.0.0",
         "RepoUrl": "https://github.com/GitPaulo/FFXIVCollectRankings",
