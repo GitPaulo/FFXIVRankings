@@ -7,12 +7,12 @@ namespace FFXIVCollectRankings.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
-    public ConfigWindow() : base("FFXIV Collect Rankings Configuratio###ConfigWindow")
+    public ConfigWindow() : base("FFXIVCollectRankings Configuration###ConfigWindow")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(300, 150);
+        Size = new Vector2(300, 142);
         SizeCondition = ImGuiCond.Always;
     }
 

@@ -12,7 +12,7 @@ namespace FFXIVCollectRankings
     {
         private const string ApiBaseUrl = "https://ffxivcollect.com/api/characters/";
 
-        private readonly HttpClient httpClient = new HttpClient();
+        private readonly HttpClient httpClient = new();
         private readonly ConcurrentDictionary<string, (DateTime timestamp, CharacterData data)> cache = new();
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -81,14 +81,13 @@ namespace FFXIVCollectRankings
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    Shared.Log.Debug($"No data found for Lodestone ID: {lodestoneId}");
+                    Shared.Log.Warning($"No data found for Lodestone ID: {lodestoneId}");
                     return null;
                 }
 
                 response.EnsureSuccessStatusCode();
                 var jsonResponse = await response.Content.ReadAsStringAsync();
 
-                Shared.Log.Debug($"Raw JSON response for Lodestone ID {lodestoneId}: {jsonResponse}");
                 return jsonResponse;
             }
             catch (HttpRequestException e)

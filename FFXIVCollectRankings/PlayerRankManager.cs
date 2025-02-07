@@ -172,9 +172,12 @@ public class PlayerRankManager(
     private void UpdateNamePlateText(INamePlateUpdateHandler handler, string text, Vector4 color)
     {
         string rankText = $"{text}";
-        
         handler.FreeCompanyTagParts.Text = rankText;
-        handler.FreeCompanyTagParts.TextWrap = CreateTextWrap(color);
+
+        if (Shared.Config.UsePercentileColours)
+        {
+            handler.FreeCompanyTagParts.TextWrap = CreateTextWrap(color);
+        }
     }
 
     private Vector4 GetRankColorFromRankText(string rankText)
@@ -213,7 +216,7 @@ public class PlayerRankManager(
         // Is world null?
         if (world.Equals(null))
         {
-            Shared.Log.Debug("World name could not be resolved.");
+            Shared.Log.Warning("World is null for player character.");
             return (null, null);
         }
 
@@ -221,22 +224,10 @@ public class PlayerRankManager(
 
         if (string.IsNullOrEmpty(playerName) || string.IsNullOrEmpty(worldName))
         {
-            Shared.Log.Debug("Player key details could not be resolved.");
+            Shared.Log.Warning("Player name or world name is null or empty.");
             return (null, null);
         }
 
         return (playerName, worldName);
-    }
-
-    private uint ConvertVector4ToUint(Vector4 color)
-    {
-        // Assuming Vector4 components are in the range [0, 1]
-        byte a = (byte)(color.W * 255); // Alpha
-        byte r = (byte)(color.X * 255); // Red
-        byte g = (byte)(color.Y * 255); // Green
-        byte b = (byte)(color.Z * 255); // Blue
-
-        // Combine components into uint in ARGB format
-        return (uint)((a << 24) | (r << 16) | (g << 8) | b);
     }
 }

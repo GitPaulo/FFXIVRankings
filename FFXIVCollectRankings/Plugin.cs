@@ -67,15 +67,15 @@ public sealed class Plugin : IDalamudPlugin
             {
                 { 
                     PlayerRankManager.RankStatus.Found.ToString(), 
-                    new Vector4(0.85f, 0.85f, 0.85f, 1.0f)      // Light gray for found ranks (soft and neutral)
+                    new Vector4(0.85f, 0.85f, 0.85f, 1.0f) // Light gray for found ranks (soft and neutral)
                 },
                 { 
                     PlayerRankManager.RankStatus.Private.ToString(), 
-                    new Vector4(1.0f, 0.4f, 0.4f, 1.0f)         // Soft red for private (indicates restricted data without being harsh)
+                    new Vector4(1.0f, 0.4f, 0.4f, 1.0f) // Soft red for private (indicates restricted data without being harsh)
                 },
                 { 
                     PlayerRankManager.RankStatus.NotFound.ToString(), 
-                    new Vector4(1.0f, 0.8f, 0.6f, 1.0f)         // Soft orange for not found (gentle warning tone)
+                    new Vector4(1.0f, 0.8f, 0.6f, 1.0f) // Soft orange for not found (gentle warning tone)
                 }
             },
             // Colors for rank thresholds
@@ -133,11 +133,6 @@ public sealed class Plugin : IDalamudPlugin
     private void NamePlateGui_OnNamePlateUpdate(
         INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
-        Shared.Log.Information("NamePlateGui_OnNamePlateUpdate");
-        Shared.Log.Information($"Handlers: {handlers.Count}");
-        Shared.Log.Information($"IsRankDisplayEnabled: {isRankDisplayEnabled}");
-        Shared.Log.Information($"Context: {context.ToString()}");
-        
         if (isRankDisplayEnabled)
         {
             Shared.PlayerRankManager.ProcessNamePlates(handlers);
