@@ -11,8 +11,6 @@ Ranks are based on community tools APIs and are configurable in the settings.
 
 ![image](./preview.png)
 
-Use `/fcr` to toggle the display of the rankings.
-
-> This plugin pairs well with: https://github.com/GitPaulo/RightClickSearchInfo
+Use `/xivr` to toggle the display of the rankings.
 
 ### Installation through `https://raw.githubusercontent.com/GitPaulo/FFXIVRankings/master/repo.json`
