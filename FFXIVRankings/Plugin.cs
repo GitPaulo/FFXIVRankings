@@ -13,8 +13,8 @@ namespace FFXIVRankings;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    private const string Name = "FFXIV Collect Rankings";
-    private const string CommandFCR = "/fcr";
+    private const string Name = "FFXIV Rankings";
+    private const string CommandFCR = "/xivr";
 
     private readonly WindowSystem windowSystem = new(Name);
 

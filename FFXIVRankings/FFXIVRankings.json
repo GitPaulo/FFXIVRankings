@@ -1,8 +1,8 @@
 {
     "Author": "GitPaulo",
     "Name": "FFXIVRankings",
-    "Punchline": "Display FFXIVCollect rankings as nameplates.",
-    "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
+    "Punchline": "Display FFXIV rankings on player's nameplates.",
+    "Description": "Dalamud plugin that displays FFXIV rankings on player's nameplates - toggleable and configurable.",
     "ApplicableVersion": "any",
     "Tags": [
         "ffxivcollect",
