@@ -1,16 +1,18 @@
 ﻿using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVCollectRankings.Windows;
+using FFXIVRankings.Services;
+using FFXIVRankings.Windows;
 using NetStone;
 
-namespace FFXIVCollectRankings;
+namespace FFXIVRankings;
 
 internal class Shared
 {
     public static Configuration Config { get; set; } = null!;
     public static ConfigWindow ConfigWindow { get; set; } = null!;
     public static FFXIVCollectService FFXIVCollectService { get; set; } = null!;
+    public static LalachievementsService LalachievementsService { get; set; } = null!;
     public static LodestoneClient LodestoneClient { get; set; } = null!;
     public static LodestoneIdFinder LodestoneIdFinder { get; set; } = null!;
     public static PlayerRankManager PlayerRankManager { get; set; } = null!;

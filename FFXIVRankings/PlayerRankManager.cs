@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using FFXIVRankings.Services;
 
-namespace FFXIVCollectRankings;
+namespace FFXIVRankings;
 
 public class PlayerRankManager(
     string separatorChar,
@@ -33,6 +34,8 @@ public class PlayerRankManager(
     public void RefreshCache()
     {
         playerRanksText.Clear();
+        
+        // TODO: Force redraw? Things will only update when re-drawn.
     }
 
     public async void ProcessNamePlates(IReadOnlyList<INamePlateUpdateHandler> handlers)
@@ -107,10 +110,22 @@ public class PlayerRankManager(
             return;
         }
 
-        CharacterData? characterData;
+        // Determine the API to use
+        FFXIVCollectCharacterData? ffxivCollectData = null;
+        LalachievementsCharacterData? lalachievementsData = null;
+
         try
         {
-            characterData = await Shared.FFXIVCollectService.GetCharacterDataAsync(lodestoneId);
+            switch (Shared.Config.SelectedAPI)
+            {
+                case Configuration.APISelection.FFXIVCollect:
+                    ffxivCollectData = await Shared.FFXIVCollectService.GetCharacterDataAsync(lodestoneId);
+                    break;
+
+                case Configuration.APISelection.Lalachievements:
+                    lalachievementsData = await Shared.LalachievementsService.GetCharacterDataAsync(lodestoneId);
+                    break;
+            }
         }
         catch (Exception ex)
         {
@@ -118,21 +133,56 @@ public class PlayerRankManager(
             return;
         }
 
-        // Private
-        if (characterData?.Rankings == null)
+        // Private/Unavailable data handling
+        if ((Shared.Config.SelectedAPI == Configuration.APISelection.FFXIVCollect &&
+             ffxivCollectData?.Rankings == null) ||
+            (Shared.Config.SelectedAPI == Configuration.APISelection.Lalachievements &&
+             lalachievementsData?.GlobalAchievementRank == null))
         {
             UpdatePlayerRank(playerKey, RankStatus.Private.ToString());
             UpdateNamePlateText(handler, RankStatus.Private.ToString(),
-                                rankColors.GetValueOrDefault(RankStatus.Private.ToString(), new Vector4(1.0f, 0.0f, 0.0f, 1.0f))); // Red
+                                rankColors.GetValueOrDefault(RankStatus.Private.ToString(),
+                                                             new Vector4(1.0f, 0.0f, 0.0f, 1.0f))); // Red
             return;
         }
 
         string rankText;
-        int? rankValue = Shared.Config.SelectedRankMetric switch
+        int? rankValue = Shared.Config.SelectedAPI switch
         {
-            RankMetric.Achievements => characterData?.Rankings?.Achievements?.Global,
-            RankMetric.Mounts => characterData?.Rankings?.Mounts?.Global,
-            RankMetric.Minions => characterData?.Rankings?.Minions?.Global,
+            Configuration.APISelection.FFXIVCollect => Shared.Config.SelectedRankMetric switch
+            {
+                RankMetric.Achievements => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                               ? ffxivCollectData?.Rankings?.Achievements?.Global
+                                               : ffxivCollectData?.Rankings?.Achievements?.Server,
+
+                RankMetric.Mounts => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                         ? ffxivCollectData?.Rankings?.Mounts?.Global
+                                         : ffxivCollectData?.Rankings?.Mounts?.Server,
+
+                RankMetric.Minions => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                          ? ffxivCollectData?.Rankings?.Minions?.Global
+                                          : ffxivCollectData?.Rankings?.Minions?.Server,
+
+                _ => null
+            },
+
+            Configuration.APISelection.Lalachievements => Shared.Config.SelectedRankMetric switch
+            {
+                RankMetric.Achievements => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                               ? lalachievementsData?.GlobalAchievementRank
+                                               : lalachievementsData?.AchievementRank,
+
+                RankMetric.Mounts => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                         ? lalachievementsData?.GlobalMountRank
+                                         : lalachievementsData?.MountRank,
+
+                RankMetric.Minions => Shared.Config.SelectedRankingType == Configuration.RankingType.Global
+                                          ? lalachievementsData?.GlobalMinionRank
+                                          : lalachievementsData?.MinionRank,
+
+                _ => null
+            },
+
             _ => null
         };
 
@@ -158,7 +208,8 @@ public class PlayerRankManager(
         rankDict[Shared.Config.SelectedRankMetric] = rankText;
     }
 
-    private (Dalamud.Game.Text.SeStringHandling.SeString, Dalamud.Game.Text.SeStringHandling.SeString) CreateTextWrap(Vector4 color)
+    private (Dalamud.Game.Text.SeStringHandling.SeString, Dalamud.Game.Text.SeStringHandling.SeString) CreateTextWrap(
+        Vector4 color)
     {
         var left = new Lumina.Text.SeStringBuilder();
         var right = new Lumina.Text.SeStringBuilder();
@@ -166,9 +217,10 @@ public class PlayerRankManager(
         left.PushColorRgba(color);
         right.PopColor();
 
-        return ((Dalamud.Game.Text.SeStringHandling.SeString)left.ToSeString(), (Dalamud.Game.Text.SeStringHandling.SeString)right.ToSeString());
+        return ((Dalamud.Game.Text.SeStringHandling.SeString)left.ToSeString(),
+                   (Dalamud.Game.Text.SeStringHandling.SeString)right.ToSeString());
     }
-    
+
     private void UpdateNamePlateText(INamePlateUpdateHandler handler, string text, Vector4 color)
     {
         string rankText = $"{text}";

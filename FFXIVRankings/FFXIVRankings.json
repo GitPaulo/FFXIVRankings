@@ -1,6 +1,6 @@
 {
     "Author": "GitPaulo",
-    "Name": "FFXIVCollectRankings",
+    "Name": "FFXIVRankings",
     "Punchline": "Display FFXIVCollect rankings as nameplates.",
     "Description": "Dalamud plugin that displays FFXIVCollect rankings as nameplates - toggleable.",
     "ApplicableVersion": "any",

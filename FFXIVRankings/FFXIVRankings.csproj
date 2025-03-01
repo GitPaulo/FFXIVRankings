@@ -5,7 +5,7 @@
   <PropertyGroup>
     <Version>1.0.0</Version>
     <Description>FFXIVCollect rankins as nameplates!</Description>
-    <PackageProjectUrl>https://github.com/GitPaulo/FFXIVCollectRankings</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/GitPaulo/FFXIVRankings</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using NetStone.Model.Parseables.Search.Character;
 using NetStone.Search.Character;
 
-namespace FFXIVCollectRankings
+namespace FFXIVRankings
 {
     public class LodestoneIdFinder
     {

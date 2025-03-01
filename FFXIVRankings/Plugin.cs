@@ -5,10 +5,11 @@ using Dalamud.Plugin;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Common.Math;
-using FFXIVCollectRankings.Windows;
+using FFXIVRankings.Services;
+using FFXIVRankings.Windows;
 using NetStone;
 
-namespace FFXIVCollectRankings;
+namespace FFXIVRankings;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -59,6 +60,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         Shared.LodestoneClient = LodestoneClient.GetClientAsync().GetAwaiter().GetResult();
         Shared.FFXIVCollectService = new FFXIVCollectService(TimeSpan.FromMinutes(10));
+        Shared.LalachievementsService = new LalachievementsService();
         Shared.LodestoneIdFinder = new LodestoneIdFinder();
         Shared.PlayerRankManager = new PlayerRankManager(
             "=",
@@ -95,7 +97,7 @@ public sealed class Plugin : IDalamudPlugin
                 },
                 { 
                     100000, 
-                    new Vector4(0.65f, 0.8f, 1.0f, 1.0f) // Light blue for > 100k
+                    new Vector4(0.2f, 0.6f, 1.0f, 1.0f) // Light blue for > 100k
                 },
                 { 
                     50000, 

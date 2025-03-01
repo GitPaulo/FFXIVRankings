@@ -1,16 +1,18 @@
-# FFXIVCollectRankings
+# FFXIVRankings
 
-Toggles the display of the FFXIV Collect rankings on the nameplate of a player. 
+Displays the global numeric rank of a player on their nameplate.
 
 Configure ranking by:
 1. Achievements
 2. Mounts
 3. Minions
 
-![image](https://github.com/user-attachments/assets/8e8e6b5e-bcdd-41f8-a0ad-1041b1442ab1)
+Ranks are based on community tools APIs and are configurable in the settings.
+
+![image](./preview.png)
 
 Use `/fcr` to toggle the display of the rankings.
 
 > This plugin pairs well with: https://github.com/GitPaulo/RightClickSearchInfo
 
-### Installation through `https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/master/repo.json`
+### Installation through `https://raw.githubusercontent.com/GitPaulo/FFXIVRankings/master/repo.json`

@@ -1,12 +1,12 @@
 [
     {
         "Author": "GitPaulo",
-        "Name": "FFXIVCollectRankings",
-        "Description": "Displays FFXIV Collect rankings for achievements/mounts/minions in player's nameplates.",
-        "InternalName": "FFXIVCollectRankings",
+        "Name": "FFXIVRankings",
+        "Description": "Displays FFXIV character rankings for achievements/mounts/minions in player's nameplates.",
+        "InternalName": "FFXIVRankings",
         "AssemblyVersion": "2.0.0",
-        "RepoUrl": "https://github.com/GitPaulo/FFXIVCollectRankings",
-        "IconUrl": "https://raw.githubusercontent.com/GitPaulo/FFXIVCollectRankings/master/Data/icon.png",
+        "RepoUrl": "https://github.com/GitPaulo/FFXIVRankings",
+        "IconUrl": "https://raw.githubusercontent.com/GitPaulo/FFXIVRankings/master/Data/icon.png",
         "ApplicableVersion": "any",
         "Tags": [
             "dalamud",
@@ -19,8 +19,8 @@
         "DalamudApiLevel": 11,
         "IsHide": "False",
         "IsTestingExclusive": "False",
-        "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip",
-        "DownloadLinkTesting": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip",
-        "DownloadLinkUpdate": "https://github.com/GitPaulo/FFXIVCollectRankings/releases/download/2.0.0/latest.zip"
+        "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVRankings/releases/download/2.0.0/latest.zip",
+        "DownloadLinkTesting": "https://github.com/GitPaulo/FFXIVRankings/releases/download/2.0.0/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/GitPaulo/FFXIVRankings/releases/download/2.0.0/latest.zip"
     }
 ]
