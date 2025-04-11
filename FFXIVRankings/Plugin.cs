@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Game.Gui.NamePlate;
@@ -19,6 +21,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly WindowSystem windowSystem = new(Name);
 
     private bool isRankDisplayEnabled = true;
+    private List<INamePlateUpdateHandler> currentHandlers = new();
 
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
@@ -30,7 +33,7 @@ public sealed class Plugin : IDalamudPlugin
         InitCommands();
         InitServices();
         InitHooks();
-        
+
         Shared.Log.Information($"Loaded {Shared.PluginInterface.Manifest.Name}");
     }
 
@@ -67,52 +70,53 @@ public sealed class Plugin : IDalamudPlugin
             // Colors for rank statuses
             new Dictionary<string, Vector4>
             {
-                { 
-                    PlayerRankManager.RankStatus.Found.ToString(), 
+                {
+                    PlayerRankManager.RankStatus.Found.ToString(),
                     new Vector4(0.85f, 0.85f, 0.85f, 1.0f) // Light gray for found ranks (soft and neutral)
                 },
-                { 
-                    PlayerRankManager.RankStatus.Private.ToString(), 
-                    new Vector4(1.0f, 0.4f, 0.4f, 1.0f) // Soft red for private (indicates restricted data without being harsh)
+                {
+                    PlayerRankManager.RankStatus.Private.ToString(),
+                    new Vector4(1.0f, 0.4f, 0.4f,
+                                1.0f) // Soft red for private (indicates restricted data without being harsh)
                 },
-                { 
-                    PlayerRankManager.RankStatus.NotFound.ToString(), 
+                {
+                    PlayerRankManager.RankStatus.NotFound.ToString(),
                     new Vector4(1.0f, 0.8f, 0.6f, 1.0f) // Soft orange for not found (gentle warning tone)
                 }
             },
             // Colors for rank thresholds
             new Dictionary<int, Vector4>
             {
-                { 
-                    1000000, 
+                {
+                    1000000,
                     new Vector4(0.85f, 0.85f, 0.85f, 1.0f) // Light gray for > 1 million (neutral tone for high ranks)
                 },
-                { 
-                    500000, 
+                {
+                    500000,
                     new Vector4(0.75f, 0.75f, 0.75f, 1.0f) // Slightly darker gray for > 500k
                 },
-                { 
-                    250000, 
+                {
+                    250000,
                     new Vector4(0.6f, 1.0f, 0.6f, 1.0f) // Soft green for > 250k
                 },
-                { 
-                    100000, 
+                {
+                    100000,
                     new Vector4(0.2f, 0.6f, 1.0f, 1.0f) // Light blue for > 100k
                 },
-                { 
-                    50000, 
+                {
+                    50000,
                     new Vector4(1.0f, 1.0f, 0.6f, 1.0f) // Soft yellow for > 50k
                 },
-                { 
-                    10000, 
+                {
+                    10000,
                     new Vector4(1.0f, 0.8f, 0.4f, 1.0f) // Light orange for > 10k
                 },
-                { 
-                    1000, 
+                {
+                    1000,
                     new Vector4(1.0f, 1.0f, 0.0f, 1.0f) // Bright yellow for > 1k
                 },
-                { 
-                    100, 
+                {
+                    100,
                     new Vector4(1.0f, 0.84f, 0.0f, 1.0f) // Gold for top 100
                 }
             });
@@ -123,6 +127,8 @@ public sealed class Plugin : IDalamudPlugin
         Shared.PluginInterface.UiBuilder.Draw += DrawUI;
         Shared.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         Shared.NamePlateGui.OnNamePlateUpdate += NamePlateGui_OnNamePlateUpdate;
+
+        _ = RefreshVisibleNamePlates();
     }
 
     private void OnCommand(string command, string args)
@@ -135,9 +141,27 @@ public sealed class Plugin : IDalamudPlugin
     private void NamePlateGui_OnNamePlateUpdate(
         INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
-        if (isRankDisplayEnabled)
+        if (!isRankDisplayEnabled) return;
+
+        currentHandlers = handlers.ToList();
+        Shared.PlayerRankManager.ProcessNamePlates(handlers);
+    }
+
+    private async Task RefreshVisibleNamePlates()
+    {
+        while (true)
         {
-            Shared.PlayerRankManager.ProcessNamePlates(handlers);
+            await Task.Delay(1000);
+
+            if (!isRankDisplayEnabled || currentHandlers.Count == 0)
+                continue;
+
+            foreach (var handler in currentHandlers)
+            {
+                if (handler.NamePlateKind != NamePlateKind.PlayerCharacter) continue;
+
+                Shared.PlayerRankManager.RefreshNameplate(handler);
+            }
         }
     }
 
