@@ -4,7 +4,7 @@
         "Name": "FFXIVRankings",
         "Description": "Displays FFXIV character rankings for achievements/mounts/minions in player's nameplates.",
         "InternalName": "FFXIVRankings",
-        "AssemblyVersion": "2.0.0",
+        "AssemblyVersion": "3.0.0",
         "RepoUrl": "https://github.com/GitPaulo/FFXIVRankings",
         "IconUrl": "https://raw.githubusercontent.com/GitPaulo/FFXIVRankings/master/Data/icon.png",
         "ApplicableVersion": "any",
