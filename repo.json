@@ -16,7 +16,7 @@
             "GitPaulo",
             "artin"
         ],
-        "DalamudApiLevel": 11,
+        "DalamudApiLevel": 12,
         "IsHide": "False",
         "IsTestingExclusive": "False",
         "DownloadLinkInstall": "https://github.com/GitPaulo/FFXIVRankings/releases/download/2.0.0/latest.zip",
